@@ -6,6 +6,8 @@
 
 Self-regulating continual learning that grows capacity only when needed.
 
+---
+
 ## The Core Idea
 
 Standard neural networks trained sequentially on multiple tasks suffer from **catastrophic forgetting**: performance on earlier tasks drops sharply as the model adapts to new data. NCG (Novelty-triggered Capacity Growth) tackles this by monitoring its own learning state through a **novelty signal** and three **learnable meta-parameters** (α, β, λ). It **autonomously expands** its hidden capacity only when three conditions are met at once: low novelty, sufficient regularisation (λ > 0.3), and a validation-accuracy plateau.
@@ -23,26 +25,30 @@ A central component is the **knowledge embedding K** with **gated write**: a fix
 
 ## Results
 
-**Table 1 — Split-MNIST** (mean ± std over seeds)
+### Table 1 — Split-MNIST (mean ± std over seeds)
 
-NCG:            Avg Acc=0.551, Forgetting=0.331, BWT=-0.407, FWT=0.024
-NCG-NoGrowth:   Avg Acc=0.552, Forgetting=0.373, BWT=-0.466, FWT=0.039
-NCG-FixedMeta:  Avg Acc=0.557, Forgetting=0.356, BWT=-0.445, FWT=0.051
-DEN:            Avg Acc=0.580, Forgetting=0.417, BWT=-0.521, FWT=0.032
-StaticMLP-256:  Avg Acc=0.579, Forgetting=0.419, BWT=-0.524, FWT=0.035
-StaticMLP-448:  Avg Acc=0.573, Forgetting=0.421, BWT=-0.531, FWT=0.027
-StaticMLP-512:  Avg Acc=0.572, Forgetting=0.425, BWT=-0.531, FWT=0.034
-EWC:            Avg Acc=0.732, Forgetting=0.229, BWT=-0.286, FWT=0.026
+| Model           | Avg Acc | Forgetting | BWT    | FWT   |
+|-----------------|---------|------------|--------|-------|
+| NCG             | 0.551   | 0.331      | -0.407 | 0.024 |
+| NCG-NoGrowth    | 0.552   | 0.373      | -0.466 | 0.039 |
+| NCG-FixedMeta   | 0.557   | 0.356      | -0.445 | 0.051 |
+| DEN             | 0.580   | 0.417      | -0.521 | 0.032 |
+| StaticMLP-256   | 0.579   | 0.419      | -0.524 | 0.035 |
+| StaticMLP-448   | 0.573   | 0.421      | -0.531 | 0.027 |
+| StaticMLP-512   | 0.572   | 0.425      | -0.531 | 0.034 |
+| EWC             | 0.732   | 0.229      | -0.286 | 0.026 |
 
-**Table 2 — Split-CIFAR-10** (mean ± std over seeds)
+### Table 2 — Split-CIFAR-10 (mean ± std over seeds)
 
-NCG:            Avg Acc=0.673, Forgetting=0.084, BWT=-0.086, FWT=0.061
-NCG-NoGrowth:   Avg Acc=0.666, Forgetting=0.103, BWT=-0.108, FWT=0.076
-NCG-FixedMeta:  Avg Acc=0.673, Forgetting=0.096, BWT=-0.119, FWT=0.077
-DEN:            Avg Acc=0.688, Forgetting=0.222, BWT=-0.278, FWT=0.088
-StaticMLP-256:  Avg Acc=0.683, Forgetting=0.230, BWT=-0.288, FWT=0.086
-StaticMLP-512:  Avg Acc=0.687, Forgetting=0.227, BWT=-0.284, FWT=0.088
-EWC:            Avg Acc=0.702, Forgetting=0.163, BWT=-0.203, FWT=0.088
+| Model           | Avg Acc | Forgetting | BWT    | FWT   |
+|-----------------|---------|------------|--------|-------|
+| NCG             | 0.673   | 0.084      | -0.086 | 0.061 |
+| NCG-NoGrowth    | 0.666   | 0.103      | -0.108 | 0.076 |
+| NCG-FixedMeta   | 0.673   | 0.096      | -0.119 | 0.077 |
+| DEN             | 0.688   | 0.222      | -0.278 | 0.088 |
+| StaticMLP-256   | 0.683   | 0.230      | -0.288 | 0.086 |
+| StaticMLP-512   | 0.687   | 0.227      | -0.284 | 0.088 |
+| EWC             | 0.702   | 0.163      | -0.203 | 0.088 |
 
 **63% forgetting reduction vs StaticMLP-256 on Split-CIFAR-10 (p < 0.0001).**
 
@@ -52,7 +58,7 @@ EWC:            Avg Acc=0.702, Forgetting=0.163, BWT=-0.203, FWT=0.088
 pip install ncg-torch
 ```
 
-Or from source:
+**Or from source:**
 
 ```bash
 git clone https://github.com/Ami-Darshan/NCG.git
