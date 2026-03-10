@@ -20,6 +20,14 @@ checkpoints/
 *.pt
 *.pth
 
+# Checkpoints and data (too large for git)
+checkpoints/
+checkpoints_cifar10/
+data/
+# Large pickle files
+results/*.pkl
+results_cifar10/*.pkl
+
 # IDE and OS
 .idea/
 .vscode/
