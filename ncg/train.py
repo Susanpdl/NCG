@@ -289,7 +289,7 @@ def save_checkpoint(
 
 
 def train_ncg(
-    model: Union[NCGModel, NCGModelCNN],
+    model: nn.Module,
     tasks: List[Tuple[DataLoader, DataLoader, DataLoader]],
     device: torch.device,
     epochs_per_task: int = 20,
@@ -301,15 +301,39 @@ def train_ncg(
     seed: int = 0,
     disable_growth: bool = False,
     task_pairs: Optional[List[Tuple[int, int]]] = None,
+    adapter: Optional[Any] = None,
+    meta: Optional[Any] = None,
+    novelty_layer_getter: Optional[Any] = None,
     verbose: bool = True,
 ) -> Dict[str, Any]:
     """
-    Train NCG sequentially on each task. After each task, evaluate on all previous
-    task test sets. Records accuracy, novelty, hidden_size, alpha, beta, lambda.
+    Train NCG sequentially on each task. Works with NCGModel/NCGModelCNN (default)
+    or any PyTorch model when adapter/meta/novelty_layer_getter are provided.
     """
     model = model.to(device)
-    weight_params = model.get_weight_params()
-    meta_params = model.get_meta_params()
+    is_ncg_model = isinstance(model, (NCGModel, NCGModelCNN))
+
+    if is_ncg_model:
+        weight_params = model.get_weight_params()
+        meta_params = model.get_meta_params()
+        _meta = None
+    elif meta is not None:
+        weight_params = [p for p in model.parameters() if p.requires_grad]
+        meta_params = meta.get_params()
+        _meta = meta
+    else:
+        weight_params = [p for p in model.parameters() if p.requires_grad]
+        meta_params = []
+        _meta = None
+
+    if is_ncg_model:
+        _novelty_monitor = None
+    elif novelty_layer_getter is not None:
+        from ncg.novelty import NoveltyMonitor
+        _novelty_monitor = NoveltyMonitor(model, novelty_layer_getter)
+    else:
+        _novelty_monitor = None
+
     lr_weights = 0.0005
     opt = torch.optim.Adam(weight_params, lr=lr_weights)
     if meta_params:
@@ -343,10 +367,16 @@ def train_ncg(
                 x, y = x.to(device), y.to(device)
                 opt.zero_grad()
                 logits, h = model(x)
-                loss = model.compute_training_loss(logits, y, num_classes=num_classes)
+                if is_ncg_model:
+                    loss = model.compute_training_loss(logits, y, num_classes=num_classes)
+                elif _meta is not None:
+                    loss = _meta.compute_training_loss(logits, y, model)
+                else:
+                    loss = F.cross_entropy(logits, y)
                 loss.backward()
                 opt.step()
-                model.update_knowledge(h)
+                if is_ncg_model:
+                    model.update_knowledge(h)
 
             train_acc, _ = evaluate(model, train_loader, device, is_ncg=True)
             val_acc, _ = evaluate(model, val_loader, device, is_ncg=True)
@@ -362,38 +392,87 @@ def train_ncg(
             val_y = torch.cat(val_y_list, dim=0).to(device)
             model.train()
             logits_meta, _ = model(val_x)
-            if meta_params:
+            if is_ncg_model and meta_params:
                 opt_meta.zero_grad()
                 meta_loss = model.compute_meta_loss(logits_meta, val_y, num_classes=num_classes)
                 (-meta_loss).backward()
                 opt_meta.step()
+            elif _meta is not None and meta_params:
+                opt_meta.zero_grad()
+                meta_loss = _meta.compute_meta_loss(logits_meta, val_y, num_classes=num_classes, model=model)
+                (-meta_loss).backward()
+                opt_meta.step()
 
-            novelty = model.compute_novelty(logits_meta.detach(), num_classes).item()
+            if is_ncg_model:
+                novelty = model.compute_novelty(logits_meta.detach(), num_classes).item()
+            elif _novelty_monitor is not None:
+                novelty = _novelty_monitor.compute(val_loader, device)
+            else:
+                novelty = 0.3
+
             results["novelty_per_epoch"].append(novelty)
-            results["hidden_size_per_epoch"].append(model.hidden_size)
-            results["alpha_per_epoch"].append(model.alpha.item())
-            results["beta_per_epoch"].append(model.beta.item())
-            results["lambda_per_epoch"].append(model.lambda_.item())
+            current_hidden = model.hidden_size if is_ncg_model else (adapter.current_size(model) if adapter is not None else 0)
+            results["hidden_size_per_epoch"].append(current_hidden)
+
+            if is_ncg_model:
+                results["alpha_per_epoch"].append(model.alpha.item())
+                results["beta_per_epoch"].append(model.beta.item())
+                results["lambda_per_epoch"].append(model.lambda_.item())
+            elif _meta is not None:
+                snap = _meta.snapshot()
+                results["alpha_per_epoch"].append(snap["alpha"])
+                results["beta_per_epoch"].append(snap["beta"])
+                results["lambda_per_epoch"].append(snap["lambda"])
+            else:
+                results["alpha_per_epoch"].append(0.0)
+                results["beta_per_epoch"].append(0.0)
+                results["lambda_per_epoch"].append(0.0)
 
             if verbose:
                 print(f"[Seed {seed} | Model {model_name} | Task {task_id + 1}/{num_tasks} | Epoch {epoch + 1}/{epochs_per_task}] Train Acc: {train_acc:.2f} | Val Acc: {val_acc:.2f} | Novelty: {novelty:.2f}")
-                print(f"[NCG] Hidden units: {model.hidden_size} | α: {model.alpha.item():.2f} | β: {model.beta.item():.2f} | λ: {model.lambda_.item():.2f}")
+                if is_ncg_model:
+                    print(f"[NCG] Hidden units: {model.hidden_size} | α: {model.alpha.item():.2f} | β: {model.beta.item():.2f} | λ: {model.lambda_.item():.2f}")
+                elif _meta is not None:
+                    print(f"[NCG] Hidden units: {current_hidden} | α: {snap['alpha']:.2f} | β: {snap['beta']:.2f} | λ: {snap['lambda']:.2f}")
 
             scheduler.step()
 
-            if not disable_growth and model.check_growth_trigger(recent_val_accs, novelty, verbose=verbose):
-                old_size = model.hidden_size
-                model.grow(64)
-                new_size = model.hidden_size
-                if verbose:
-                    print(f"[NCG] Growth event: {old_size} → {new_size} hidden units (task {task_id+1}, epoch {epoch+1})")
-                weight_params = model.get_weight_params()
-                meta_params = model.get_meta_params()
-                opt = torch.optim.Adam(weight_params, lr=lr_weights)
-                if meta_params:
-                    opt_meta = torch.optim.Adam(meta_params, lr=lr_meta)
-                remaining_epochs = epochs_per_task - (epoch + 1)
-                scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, remaining_epochs), eta_min=1e-5)
+            if not disable_growth:
+                if is_ncg_model:
+                    lam = model.lambda_.item()
+                elif _meta is not None:
+                    lam = _meta.lambda_.item()
+                else:
+                    lam = 0.5
+
+                if is_ncg_model:
+                    should_grow = model.check_growth_trigger(recent_val_accs, novelty, verbose=verbose)
+                else:
+                    from ncg.adapters import GrowthAdapter
+                    should_grow = (
+                        adapter is not None
+                        and novelty < 0.5
+                        and lam > 0.3
+                        and len(recent_val_accs) >= 3
+                        and (max(recent_val_accs[-3:]) - min(recent_val_accs[-3:])) < 0.005
+                    )
+
+                if should_grow:
+                    old_size = model.hidden_size if is_ncg_model else adapter.current_size(model)
+                    if is_ncg_model:
+                        model.grow(64)
+                    elif adapter is not None:
+                        adapter.expand(model)
+                    new_size = model.hidden_size if is_ncg_model else adapter.current_size(model)
+                    if verbose:
+                        print(f"[NCG] Growth: {old_size} → {new_size} (task {task_id+1}, epoch {epoch+1})")
+                    weight_params = model.get_weight_params() if is_ncg_model else [p for p in model.parameters() if p.requires_grad]
+                    meta_params_new = model.get_meta_params() if is_ncg_model else (_meta.get_params() if _meta else [])
+                    opt = torch.optim.Adam(weight_params, lr=lr_weights)
+                    if meta_params_new:
+                        opt_meta = torch.optim.Adam(meta_params_new, lr=lr_meta)
+                    remaining = epochs_per_task - (epoch + 1)
+                    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=max(1, remaining), eta_min=1e-5)
 
         task_accs_so_far: List[float] = []
         for ti in range(len(tasks)):

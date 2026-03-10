@@ -11,6 +11,7 @@ from ncg.adapters import (
     NCGGrowthAdapter,
     TransformerGrowthAdapter,
 )
+from ncg.meta import StandaloneMetaParameters
 from ncg.model import (
     DENModel,
     DENModelCNN,
@@ -19,6 +20,7 @@ from ncg.model import (
     NCGModelCNN,
     StaticMLP,
 )
+from ncg.novelty import NoveltyMonitor
 from ncg.train import (
     get_device,
     get_split_cifar10_tasks,
@@ -50,4 +52,6 @@ __all__ = [
     "set_seed",
     "get_split_mnist_tasks",
     "get_split_cifar10_tasks",
+    "StandaloneMetaParameters",
+    "NoveltyMonitor",
 ]
