@@ -45,7 +45,7 @@ Repository = "https://github.com/rsd-darshan/NCG"
 Issues = "https://github.com/rsd-darshan/NCG/issues"
 
 [project.scripts]
-ncg-run = "scripts.main:main"
+ncg-run = "ncg.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

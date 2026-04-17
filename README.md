@@ -171,7 +171,7 @@ python scripts/main.py --benchmark split_mnist --seeds 42 43 44 45 46 47 48 49 5
 python scripts/main.py --benchmark split_cifar10 --seeds 42 43 44 45 46 47 48 49 50 51
 ```
 
-CI note: GitHub Actions runs unit tests on Python 3.9/3.11, excluding `integration` tests that require dataset downloads.
+CI note: GitHub Actions runs unit tests on Python 3.9/3.11, excluding `integration` tests that require dataset downloads. A separate scheduled/manual integration workflow runs `integration` tests.
 
 Results policy: this repository tracks curated result tables/figures used in the README, while large training artifacts (checkpoints, raw dumps) are ignored.
 

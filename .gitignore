@@ -16,12 +16,12 @@ ENV/
 data/
 checkpoints/
 checkpoints_cifar10/
-results/
-results_cifar10/
 *.zip
 *.pkl
 *.pt
 *.pth
+results/checkpoints/
+results_cifar10/checkpoints/
 
 # IDE and OS
 .idea/
