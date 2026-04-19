@@ -5,7 +5,7 @@ Thanks for your interest in improving NCG.
 ## Development Setup
 
 ```bash
-git clone https://github.com/rsd-darshan/NCG.git
+git clone https://github.com/Susanpdl/NCG.git
 cd NCG
 pip install -e ".[dev]"
 ```

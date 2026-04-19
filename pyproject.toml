@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [
-    { name = "Darshan Poudel", email = "darshanpoudel.dev@gmail.com" }
+    { name = "Susan Poudel", email = "susanpdl77@gmail.com" }
 ]
 keywords = ["continual-learning", "neural-networks", "meta-learning"]
 classifiers = [
@@ -40,9 +40,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rsd-darshan/NCG"
-Repository = "https://github.com/rsd-darshan/NCG"
-Issues = "https://github.com/rsd-darshan/NCG/issues"
+Homepage = "https://github.com/Susanpdl/NCG"
+Repository = "https://github.com/Susanpdl/NCG"
+Issues = "https://github.com/Susanpdl/NCG/issues"
 
 [project.scripts]
 ncg-run = "ncg.cli:main"

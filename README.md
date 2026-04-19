@@ -1,10 +1,10 @@
 # NCG — Novelty-triggered Capacity Growth
 
-[![CI](https://github.com/rsd-darshan/NCG/actions/workflows/ci.yml/badge.svg)](https://github.com/rsd-darshan/NCG/actions/workflows/ci.yml)
+[![CI](https://github.com/Susanpdl/NCG/actions/workflows/ci.yml/badge.svg)](https://github.com/Susanpdl/NCG/actions/workflows/ci.yml)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/status-research%20prototype-purple.svg)](https://github.com/rsd-darshan/NCG)
+[![Status](https://img.shields.io/badge/status-research%20prototype-purple.svg)](https://github.com/Susanpdl/NCG)
 
 **Self-regulating continual learning that expands model capacity only when needed.**
 
@@ -129,7 +129,7 @@ import ncg
 PyPI release is planned; for now install from source:
 
 ```bash
-git clone https://github.com/rsd-darshan/NCG.git
+git clone https://github.com/Susanpdl/NCG.git
 cd NCG
 pip install -e .
 ```
@@ -221,10 +221,10 @@ run_diagnostics(logs["ncg_logs"][0])
 ```bibtex
 @article{poudel2026ncg,
   title   = {Novelty-triggered Capacity Growth for Continual Learning},
-  author  = {Poudel, Darshan},
+  author  = {Poudel, Susan},
   year    = {2026},
   note    = {Preprint. Under review.},
-  url     = {https://github.com/rsd-darshan/NCG}
+  url     = {https://github.com/Susanpdl/NCG}
 }
 ```
 
